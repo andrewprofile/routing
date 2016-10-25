@@ -20,6 +20,21 @@ namespace Stack\Routing;
 class Exception extends \Exception
 {
     /**
+     * A route name was not found.
+     *
+     * @param  string $name
+     *
+     * @return Exception\RouteNotFound
+     * @throws Exception\RouteNotFound
+     */
+    public static function RouteNotFound(string $name)
+    {
+        throw new Exception\RouteNotFound(
+            sprintf('No route found for "%s".', $name)
+        );
+    }
+
+    /**
      * The rule was not allowed.
      *
      * @param  string $path
@@ -77,17 +92,32 @@ class Exception extends \Exception
     }
 
     /**
-     * A route name was not found.
+     * A route requirement was not be string.
      *
      * @param  string $name
      *
-     * @return Exception\RouteNotFound
-     * @throws Exception\RouteNotFound
+     * @return Exception\RequirementInvalidType
+     * @throws Exception\RequirementInvalidType
      */
-    public static function RouteNotFound(string $name)
+    public static function RequirementInvalidType(string $name)
     {
-        throw new Exception\RouteNotFound(
-            sprintf('No route found for "%s".', $name)
+        throw new Exception\RequirementInvalidType(
+            sprintf('Routing requirement for "%s" must be a string.', $name)
+        );
+    }
+
+    /**
+     * A route requirement was not be empty.
+     *
+     * @param  string $name
+     *
+     * @return Exception\RequirementIsEmpty
+     * @throws Exception\RequirementIsEmpty
+     */
+    public static function RequirementIsEmpty(string $name)
+    {
+        throw new Exception\RequirementIsEmpty(
+            sprintf('Routing requirement for "%s" cannot be empty.', $name)
         );
     }
 }

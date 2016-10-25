@@ -45,7 +45,7 @@ final class Route implements \Serializable
     private $defaults = [];
 
     /**
-     * @var callable
+     * @var mixed
      */
     private $handler;
 
@@ -62,7 +62,7 @@ final class Route implements \Serializable
     /**
      * @var string
      */
-    private $path;
+    private $path = '/';
 
     /**
      * @var bool
@@ -80,9 +80,9 @@ final class Route implements \Serializable
     private $secure = false;
 
     /**
-     * @var string
+     * @var array
      */
-    private $wildcard;
+    private $wildcard = [];
 
     /**
      * Route constructor.
@@ -94,10 +94,10 @@ final class Route implements \Serializable
     public function __construct(
         string $name,
         string $path,
-        callable $handler = null
+        $handler = null
     ) {
         $this->name    = $name;
-        $this->path    = $path;
+        $this->path    = '/'.ltrim(trim($path), '/');;
         $this->handler = $handler;
     }
 
@@ -106,7 +106,7 @@ final class Route implements \Serializable
      *
      * @param string   $name
      * @param string   $path
-     * @param callable $handler
+     * @param          $handler
      * @param array    $defaults
      * @param array    $requirements
      * @param string   $host
@@ -115,7 +115,7 @@ final class Route implements \Serializable
      * @param array    $attributes
      * @param array    $auth
      * @param bool     $secure
-     * @param string   $wildcard
+     * @param array    $wildcard
      * @param bool     $isRoutable
      *
      * @return Route
@@ -123,7 +123,7 @@ final class Route implements \Serializable
     public static function createWithOptional(
         string $name,
         string $path,
-        callable $handler   = null,
+        $handler            = null,
         array $defaults     = [],
         array $requirements = [],
         string $host        = '',
@@ -132,15 +132,17 @@ final class Route implements \Serializable
         array $attributes   = [],
         array $auth         = [],
         bool  $secure       = false,
-        string $wildcard    = '',
+        array $wildcard     = [],
         bool $isRoutable    = true
     ) {
         $route               = new Route($name, $path, $handler);
         $route->defaults     = $defaults;
-        $route->requirements = $requirements;
+        foreach ($requirements as $key => $regex) {
+            $route->requirements[$key] = $route->sanitizeRequirement($key, $regex);
+        }
         $route->host         = $host;
-        $route->accepts      = $accepts;
-        $route->allows       = $allows;
+        $route->accepts      = array_map('strtolower', (array) $accepts);
+        $route->allows       = array_map('strtoupper', (array) $allows);
         $route->attributes   = $attributes;
         $route->auth         = $auth;
         $route->secure       = $secure;
@@ -203,9 +205,9 @@ final class Route implements \Serializable
     /**
      * Returns the handler of route.
      *
-     * @return callable
+     * @return mixed
      */
-    public function handler() : callable
+    public function handler()
     {
         return $this->handler;
     }
@@ -262,6 +264,17 @@ final class Route implements \Serializable
     }
 
     /**
+     * Returns the requirement for the given key.
+     *
+     * @param $key
+     * @return string
+     */
+    public function requirement($key) : string
+    {
+        return isset($this->requirements[$key]) ? $this->requirements[$key] : '';
+    }
+
+    /**
      * Return true if this route respond on secure protocol.
      *
      * @return bool
@@ -274,9 +287,9 @@ final class Route implements \Serializable
     /**
      * Returns the wildcard name of route.
      *
-     * @return string
+     * @return array
      */
-    public function wildcard() : string
+    public function wildcard() : array
     {
         return $this->wildcard;
     }
@@ -322,5 +335,35 @@ final class Route implements \Serializable
         $this->handler      = $data['handler'];
         $this->wildcard     = $data['wildcard'];
         $this->isRoutable   = $data['isRoutable'];
+    }
+
+
+    /**
+     * @param string $key
+     * @param string $regex
+     *
+     * @return string
+     * @throws Exception\RequirementInvalidType
+     * @throws Exception\RequirementIsEmpty
+     */
+    private function sanitizeRequirement(string $key, string $regex) : string
+    {
+        if (!is_string($regex)) {
+            throw Exception::RequirementInvalidType($key);
+        }
+
+        if ($regex !== '' && $regex[0] === '^') {
+            $regex = (string) substr($regex, 1);
+        }
+
+        if (substr($regex, -1) === '$') {
+            $regex = substr($regex, 0, -1);
+        }
+
+        if ($regex === '') {
+            throw Exception::RequirementIsEmpty($key);
+        }
+
+        return $regex;
     }
 }
