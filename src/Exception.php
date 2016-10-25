@@ -96,12 +96,12 @@ class Exception extends \Exception
      *
      * @param  string $name
      *
-     * @return Exception\RequirementInvalidType
-     * @throws Exception\RequirementInvalidType
+     * @return Exception\RequirementNotString
+     * @throws Exception\RequirementNotString
      */
-    public static function RequirementInvalidType(string $name)
+    public static function RequirementNotString(string $name)
     {
-        throw new Exception\RequirementInvalidType(
+        throw new Exception\RequirementNotString(
             sprintf('Routing requirement for "%s" must be a string.', $name)
         );
     }

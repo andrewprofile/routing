@@ -62,6 +62,7 @@ class RouteTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals(['isAdmin' => true], $route->auth(), '__construct() takes requirements as its tenth argument');
         $this->assertEquals(true, $route->secure(), '__construct() takes requirements as its eleventh argument');
         $this->assertEquals(['card' => ['foo']], $route->wildcard(), '__construct() takes requirements as its twelfth argument');
+        $this->assertEquals(true, $route->isRoutable(), '__construct() takes requirements as its thirteenth argument');
     }
 
     public function testPath()
@@ -84,5 +85,41 @@ class RouteTest extends \PHPUnit_Framework_TestCase
         $this->assertEmpty($route->requirement('bar'), '->requirement() returns "" if a requirement is not defined');
         $route = Route::createWithOptional('foo', '/{foo}', null, [], ['foo' => '^\d+$']);
         $this->assertEquals('\d+', $route->requirement('foo'), '->requirement() removes ^ and $ from the path');
+    }
+
+    public function testRequirement()
+    {
+        $route = Route::createWithOptional('foo', '/{foo}', null, [], ['foo' => '^\d+$']);
+        $this->assertEquals('\d+', $route->requirement('foo'), '__construct() removes ^ and $ from the path');
+    }
+
+    /**
+     * @dataProvider invalidRequirements
+     * @expectedException \InvalidArgumentException
+     * @param $requirement
+     */
+    public function testSetInvalidRequirement($requirement)
+    {
+        Route::createWithOptional('foo', '/{foo}', null, [], ['foo' => $requirement]);
+    }
+
+    public function invalidRequirements()
+    {
+        return [
+            [''],
+            [[]],
+            ['^$'],
+            ['^'],
+            ['$'],
+        ];
+    }
+
+    public function testSerialize()
+    {
+        $route = Route::createWithOptional('foo', '/{foo}', null, [], ['foo' => '^\d+$']);
+        $serialized = serialize($route);
+        $unserialized = unserialize($serialized);
+        $this->assertEquals($route, $unserialized);
+        $this->assertNotSame($route, $unserialized);
     }
 }

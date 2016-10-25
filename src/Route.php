@@ -97,7 +97,7 @@ final class Route implements \Serializable
         $handler = null
     ) {
         $this->name    = $name;
-        $this->path    = '/'.ltrim(trim($path), '/');;
+        $this->path    = '/'.ltrim(trim($path), '/');
         $this->handler = $handler;
     }
 
@@ -138,7 +138,11 @@ final class Route implements \Serializable
         $route               = new Route($name, $path, $handler);
         $route->defaults     = $defaults;
         foreach ($requirements as $key => $regex) {
-            $route->requirements[$key] = $route->sanitizeRequirement($key, $regex);
+            try {
+                $route->requirements[$key] = $route->sanitizeRequirement($key, $regex);
+            } catch (\TypeError $e) {
+                throw Exception::RequirementNotString($key);
+            }
         }
         $route->host         = $host;
         $route->accepts      = array_map('strtolower', (array) $accepts);
@@ -343,15 +347,10 @@ final class Route implements \Serializable
      * @param string $regex
      *
      * @return string
-     * @throws Exception\RequirementInvalidType
      * @throws Exception\RequirementIsEmpty
      */
     private function sanitizeRequirement(string $key, string $regex) : string
     {
-        if (!is_string($regex)) {
-            throw Exception::RequirementInvalidType($key);
-        }
-
         if ($regex !== '' && $regex[0] === '^') {
             $regex = (string) substr($regex, 1);
         }

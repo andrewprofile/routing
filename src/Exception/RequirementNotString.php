@@ -12,6 +12,6 @@ declare(strict_types=1);
 
 namespace Stack\Routing\Exception;
 
-class RequirementInvalidType extends \InvalidArgumentException
+class RequirementNotString extends \InvalidArgumentException
 {
 }
